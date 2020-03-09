@@ -7,6 +7,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Application.Activities;
 using MediatR;
+using AutoMapper;
+using API.Mappings;
 
 namespace API
 {
@@ -33,6 +35,7 @@ namespace API
             });
 
             services.AddMediatR(typeof(List.Handler).Assembly);
+            services.AddAutoMapper(typeof(ModelToResourceProfile));
             services.AddControllers();
         }
 

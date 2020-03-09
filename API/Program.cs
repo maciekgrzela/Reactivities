@@ -23,7 +23,6 @@ namespace API
                     logger.LogError(e, "Error occured during migration");
                 }
             }
-
             host.Run();
         }
 
