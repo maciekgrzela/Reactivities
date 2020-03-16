@@ -3,61 +3,105 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using API.Resources;
 using Application.Activities;
+using Application.Extensions;
 using AutoMapper;
 using Domain;
-using MediatR;
+using Domain.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace API.Controllers {
+namespace API.Controllers
+{
 
     [Route("api/[controller]")]
     [ApiController]
     public class ActivitiesController : ControllerBase
     {
-        private readonly IMediator _mediator;
         private readonly IMapper _mapper;
-        public ActivitiesController(IMediator mediator, IMapper mapper)
+        private readonly IActivityService _activityService;
+        public ActivitiesController(IMapper mapper, IActivityService _activityService)
         {
+            this._activityService = _activityService;
             this._mapper = mapper;
-            this._mediator = mediator;
         }
 
 
         [HttpGet]
-        public async Task<IEnumerable<ActivityResource>> List()
+        public async Task<IActionResult> getListOfActivities()
         {
-            var activities = await _mediator.Send(new List.Query());
-            var activitiesMapped = _mapper.Map<IEnumerable<ActivityResource>>(activities);
+            var activities = await _activityService.listAllActivitiesAsync();
+            var activitiesResource = _mapper.Map<IEnumerable<ActivityResource>>(activities);
 
-            return activitiesMapped;
+            return Ok(activitiesResource);
         }
 
 
         [HttpGet("{id}")]
-        public async Task<ActivityResource> Details(Guid id) {
-            var singleActivity = await _mediator.Send(new Details.Query { Id = id });
-            var activityMapped = _mapper.Map<ActivityResource>(singleActivity);
+        public async Task<IActionResult> getActivity(Guid id)
+        {
+            var result = await _activityService.listActivityAsync(id);
 
-            return activityMapped;
+            if (!result.Status)
+            {
+                return BadRequest(result.Message);
+            }
+
+            var activityResource = _mapper.Map<Activity, ActivityResource>(result.Activity);
+
+            return Ok(activityResource);
         }
 
         [HttpPost]
-        public async Task<ActionResult<Unit>> Create(Create.Command command)
+        public async Task<IActionResult> createActivity([FromBody] SaveActivityResource saveActivityResource)
         {
-            return await _mediator.Send(command);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState.GetErrorMessages());
+            }
+
+            var activity = _mapper.Map<SaveActivityResource, Activity>(saveActivityResource);
+            var result = await _activityService.addActivityAsync(activity);
+
+            if (!result.Status)
+            {
+                return BadRequest(result.Message);
+            }
+
+            var activityResource = _mapper.Map<Activity, ActivityResource>(result.Activity);
+            return Ok(activityResource);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<Unit>> Edit(Guid Id, Edit.Command command)
+        public async Task<IActionResult> updateActivity(Guid Id, [FromBody] SaveActivityResource saveActivityResource)
         {
-            command.Id = Id;
-            return await _mediator.Send(command);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState.GetErrorMessages());
+            }
+
+            var activity = _mapper.Map<SaveActivityResource, Activity>(saveActivityResource);
+            var result = await _activityService.updateActivityAsync(Id, activity);
+
+            if (!result.Status)
+            {
+                return BadRequest(result.Message);
+            }
+
+            var activityResource = _mapper.Map<Activity, ActivityResource>(result.Activity);
+            return Ok(activityResource);
         }
 
         [HttpDelete("{id}")]
-        public async Task<ActionResult<Unit>> Delete(Guid id)
+        public async Task<IActionResult> Delete(Guid id)
         {
-            return await _mediator.Send(new Delete.Command { Id = id });
+            var result = await _activityService.deleteActivityAsync(id);
+            if (!result.Status)
+            {
+                return BadRequest(result.Message);
+            }
+
+            var activityResource = _mapper.Map<Activity, ActivityResource>(result.Activity);
+
+            return Ok(activityResource);
         }
     }
 }

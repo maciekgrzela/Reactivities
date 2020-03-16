@@ -8,19 +8,25 @@ using Persistance;
 
 namespace API
 {
-    public class Program {
-        public static void Main(string[] args) {
+    public class Program
+    {
+        public static void Main(string[] args)
+        {
             var host = CreateHostBuilder(args).Build();
-            
-            using (var scope = host.Services.CreateScope()){
+
+            using (var scope = host.Services.CreateScope())
+            {
                 var services = scope.ServiceProvider;
-                try {
+                try
+                {
                     var context = services.GetRequiredService<DataContext>();
                     context.Database.Migrate();
                     Seed.SeedData(context);
-                }catch(Exception e){
+                }
+                catch (Exception e)
+                {
                     var logger = services.GetRequiredService<ILogger<Program>>();
-                    logger.LogError(e, "Error occured during migration");
+                    logger.LogError(e, "Error occurred during migration");
                 }
             }
             host.Run();
@@ -28,7 +34,8 @@ namespace API
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder => {
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
                     webBuilder.UseStartup<Startup>();
                 });
     }
